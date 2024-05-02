@@ -3,42 +3,35 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
+import json
+
+# Load intents from JSON file
+with open('intents.json', 'r') as file:
+    intents_data = json.load(file)
+
+# Initialize dataset
+dataset = []
+
+# Populate dataset from intents
+for intent in intents_data['intents']:
+    tag = intent['tag']
+    patterns = intent['patterns']
+    responses = intent['responses']
+    context_set = intent['context_set']
+    
+    # Create an entry for each pattern-response pair
+    for pattern in patterns:
+        dataset.append({
+            'tag': tag,
+            'patterns': [pattern],
+            'responses': responses,
+            'context_set': context_set
+        })
+
+#print(dataset)
 
 #nltk.download('stopwords')
 #nltk.download('punkt')
-
-# Sample dataset
-dataset = [
-    {
-        "tag": "Wound Care",
-        "patterns": [
-            "I cut my finger while chopping vegetables",
-            "I scraped my knee on the pavement",
-            # Add more patterns as needed
-        ],
-        "responses": [
-            "For minor cuts and scrapes, clean the wound with soap and water, apply an antibiotic ointment, and cover it with a bandage.",
-            "Ensure the wound is clean, apply pressure if it's bleeding, and use a bandage to cover it.",
-            # Add more responses as needed
-        ],
-        "context_set": ""
-    },
-    {
-        "tag": "Sore Throat",
-        "patterns": [
-            "I have a tickle in my throat",
-            "It feels painful everytime I swallow",
-            # Add more patterns as needed
-        ],
-        "responses": [
-            "You likely have a cold. Try taking an ibuprofen to subside the pain in your throat.",
-            "Try drinking tea or warm water with lemon to ease your soreness and help with your cold.",
-            # Add more responses as needed
-        ],
-        "context_set": ""
-    },
-    # Add more entries for other tags as needed
-]
 
 # Preprocessing
 stop_words = set(stopwords.words('english'))
@@ -65,9 +58,12 @@ y = tags
 classifier = MultinomialNB()
 classifier.fit(X, y)
 
-# Example usage: Predicting the tag for a new prompt
-new_prompt = "I got stabbed by a knife"
-new_prompt_processed = preprocess_text(new_prompt)
-new_prompt_vectorized = vectorizer.transform([new_prompt_processed])
-predicted_tag = classifier.predict(new_prompt_vectorized)[0]
-print("Predicted tag:", predicted_tag)
+loop = True
+
+print('welcome to the first aid chatbot, how can i help you?')
+while loop:
+    new_prompt = input()
+    new_prompt_processed = preprocess_text(new_prompt)
+    new_prompt_vectorized = vectorizer.transform([new_prompt_processed])
+    predicted_tag = classifier.predict(new_prompt_vectorized)[0]
+    print("Seems like your problem has to do with ", predicted_tag)
