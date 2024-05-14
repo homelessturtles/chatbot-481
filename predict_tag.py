@@ -4,6 +4,7 @@ from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 import json
+import random
 
 # Load intents from JSON file
 with open('intents.json', 'r') as file:
@@ -18,7 +19,7 @@ for intent in intents_data['intents']:
     patterns = intent['patterns']
     responses = intent['responses']
     context_set = intent['context_set']
-    
+
     # Create an entry for each pattern-response pair
     for pattern in patterns:
         dataset.append({
@@ -28,17 +29,21 @@ for intent in intents_data['intents']:
             'context_set': context_set
         })
 
-#print(dataset)
+# print(dataset)
 
-#nltk.download('stopwords')
-#nltk.download('punkt')
+# nltk.download('stopwords')
+# nltk.download('punkt')
 
 # Preprocessing
 stop_words = set(stopwords.words('english'))
+
+
 def preprocess_text(text):
     tokens = word_tokenize(text)
-    tokens = [word.lower() for word in tokens if word.isalpha() and word.lower() not in stop_words]
+    tokens = [word.lower() for word in tokens if word.isalpha()
+              and word.lower() not in stop_words]
     return ' '.join(tokens)
+
 
 # Extract features using TF-IDF
 corpus = []
@@ -54,7 +59,7 @@ X = vectorizer.fit_transform(corpus)
 # Target labels
 y = tags
 
-# Train a classifier
+# Train the classifier
 classifier = MultinomialNB()
 classifier.fit(X, y)
 
@@ -63,7 +68,14 @@ loop = True
 print('welcome to the first aid chatbot, how can i help you?')
 while loop:
     new_prompt = input()
-    new_prompt_processed = preprocess_text(new_prompt)
-    new_prompt_vectorized = vectorizer.transform([new_prompt_processed])
-    predicted_tag = classifier.predict(new_prompt_vectorized)[0]
-    print("Seems like your problem has to do with ", predicted_tag)
+    if new_prompt == "goodbye":
+        print("goodbye")
+        loop = False
+    else:
+        new_prompt_processed = preprocess_text(new_prompt)
+        new_prompt_vectorized = vectorizer.transform([new_prompt_processed])
+        predicted_tag = classifier.predict(new_prompt_vectorized)[0]
+        response = [item['responses']
+                    for item in dataset if item.get('tag') == predicted_tag]
+        print(f'{random.choice(response)}')
+        print('what else can i help you with?')
